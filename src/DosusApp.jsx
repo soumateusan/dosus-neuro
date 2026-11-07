@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
   Brain, FolderOpen, UserCog, ChevronDown, ChevronRight, CheckCircle2, Circle, AlertTriangle, Menu, X as Fechar,
-  ClipboardCheck, User, FlaskConical, Pill, FileText, FileSignature, ListChecks, NotebookPen, Calculator, Plus, Save, WifiOff,
+  ClipboardCheck, User, FlaskConical, Pill, FileText, FileSignature, ListChecks, NotebookPen, Calculator, Plus, Save, WifiOff, Printer,
 } from "lucide-react";
 import { PacienteCtx } from "./shared/ui.jsx";
 import { MEEM } from "./shared/meem.jsx";
@@ -12,6 +12,7 @@ import { Arquivo } from "./Arquivo.jsx";
 import { novoAlzheimer, pacienteVazio, derivar, idadeDe } from "./alzheimer/processo.js";
 import { Visao, Paciente, Exames, Prescricao } from "./alzheimer/telas.jsx";
 import { LME, Termo, Acesso, Relatorio } from "./alzheimer/documentos.jsx";
+import { ImprimirTudo } from "./alzheimer/imprimir.jsx";
 
 /* ---------- patologias e seções ---------- */
 const secoesAlz = [
@@ -25,6 +26,7 @@ const secoesAlz = [
   { id: "termo", nome: "Termo de esclarecimento", icone: FileSignature, chk: ["ter"] },
   { id: "acesso", nome: "Formulário de acesso", icone: ListChecks },
   { id: "relatorio", nome: "Relatório médico", icone: NotebookPen },
+  { id: "imprimir", nome: "Imprimir tudo", icone: Printer },
 ];
 export const patologias = [
   { id: "alzheimer", nome: "Doença de Alzheimer", ativo: true },
@@ -239,6 +241,7 @@ export default function DosusApp() {
                 {tela.sec === "termo" && <Termo {...props} />}
                 {tela.sec === "acesso" && <Acesso {...props} />}
                 {tela.sec === "relatorio" && <Relatorio {...props} />}
+                {tela.sec === "imprimir" && <ImprimirTudo {...props} />}
               </>
             )}
             <footer className="mt-8 text-[11px] text-slate-400 leading-relaxed border-t border-slate-200 pt-3 print:hidden">

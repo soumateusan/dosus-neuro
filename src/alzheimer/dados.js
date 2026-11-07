@@ -203,3 +203,31 @@ export const acessoTxt = {
   gal: ["Insuficiência hepática ou renal graves."],
   mem: ["Clearance de creatinina inferior a 5 mL/minuto/1,73 m²."],
 };
+
+/* exames que podem ser SOLICITADOS (chequinho SESAB, texto e laudo APAC).
+   Códigos SIGTAP (10 dígitos) — editáveis na tela; confira no SIGTAP se houver atualização.
+   "ref" liga o pedido ao exame do checklist; "grupo" separa imagem de laboratório. */
+export const pedidos = [
+  { id: "rm", nome: "Ressonância magnética de crânio", cod: "0207010064", ref: "img", grupo: "imagem" },
+  { id: "tc", nome: "Tomografia computadorizada de crânio", cod: "0206010079", ref: "img", grupo: "imagem" },
+  { id: "creat", nome: "Dosagem de creatinina", cod: "0202010317", ref: "creat", grupo: "lab" },
+  { id: "tgo", nome: "Dosagem de transaminase glutâmico-oxalacética (TGO/AST)", cod: "0202010643", ref: "tgo", grupo: "lab" },
+  { id: "tgp", nome: "Dosagem de transaminase glutâmico-pirúvica (TGP/ALT)", cod: "0202010651", ref: "tgp", grupo: "lab" },
+  { id: "hemo", nome: "Hemograma completo", cod: "0202020380", ref: "hemo", grupo: "lab" },
+  { id: "na", nome: "Dosagem de sódio", cod: "0202010635", ref: "na", grupo: "lab" },
+  { id: "k", nome: "Dosagem de potássio", cod: "0202010600", ref: "k", grupo: "lab" },
+  { id: "ca", nome: "Dosagem de cálcio", cod: "0202010210", ref: "ca", grupo: "lab" },
+  { id: "gli", nome: "Dosagem de glicose", cod: "0202010473", ref: "gli", grupo: "lab" },
+  { id: "ureia", nome: "Dosagem de ureia", cod: "0202010694", ref: "ureia", grupo: "lab" },
+  { id: "tsh", nome: "Dosagem de hormônio tireoestimulante (TSH)", cod: "0202060250", ref: "tsh", grupo: "lab" },
+  { id: "vdrl", nome: "Teste não treponêmico para detecção de sífilis (VDRL)", cod: "0202031110", ref: "sifilis", grupo: "lab" },
+  { id: "hiv", nome: "Pesquisa de anticorpos anti-HIV-1 + HIV-2", cod: "0202030300", ref: "hiv", grupo: "lab" },
+  { id: "b12", nome: "Dosagem de vitamina B12", cod: "0202010708", ref: "b12", grupo: "lab" },
+  { id: "folato", nome: "Dosagem de ácido fólico", cod: "0202010376", ref: "b12", grupo: "lab" },
+];
+
+/* 0207010064 → 02.07.01.006-4 */
+export const fmtSigtap = (c) => {
+  const d = String(c || "").replace(/\D/g, "");
+  return d.length === 10 ? `${d.slice(0, 2)}.${d.slice(2, 4)}.${d.slice(4, 6)}.${d.slice(6, 9)}-${d.slice(9)}` : c || "";
+};

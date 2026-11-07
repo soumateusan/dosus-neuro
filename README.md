@@ -16,11 +16,12 @@ Segue o PCDT (Portaria Conjunta SAES/SCTIE nº 27/2025) e as orientações da SE
 - **O que pedir / elegibilidade** — documentos, exames com validade, critérios de MEEM/CDR por medicamento, monitoramento, renovação e unidades de referência.
 - **Paciente e história** — identificação, CID-10, capacidade/responsável e história clínica (alimentam todos os documentos).
 - **MEEM** e **CDR** — com ficha para impressão (vieram do NeuroCalc; cópia em `src/shared/`).
-- **Exames** — obrigatórios conforme o medicamento, com alerta de validade vencida.
+- **Exames** — marque o que vai pedir (códigos SIGTAP editáveis) e gere: o **chequinho SESAB** impresso (3 por folha; laboratório pode ir numa guia só), o **texto da solicitação** para copiar e o **laudo APAC** preenchido (1 principal + 5 secundários). Abaixo, o registro dos resultados com alerta de validade vencida.
 - **Prescrição** — esquemas clicáveis (titulação/manutenção) → texto para a prescrição eletrônica e quantidades do LME.
 - **LME** — preenche o PDF oficial (`public/docs/lme-2026.pdf`) no próprio navegador; o PDF gerado continua editável.
 - **Termo de esclarecimento** e **Formulário de acesso** — modelos da SESAB com cabeçalho e brasão, impressos já preenchidos.
 - **Relatório médico** — alternativa ao formulário de acesso, texto pronto para o prontuário.
+- **Imprimir tudo** — Termo (1 ou 2 vias), Formulário de acesso, MEEM e CDR numa só impressão; LME + APAC num único PDF.
 - **Checklist em tempo real** — mostra o que falta em cada documento.
 
 **Pacientes (arquivo):** tudo fica salvo no IndexedDB do navegador (sem servidor). Busca por nome, mãe, CPF ou CNS;

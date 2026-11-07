@@ -4,6 +4,8 @@ import { Txt, Escolha, Marca, Cartao, TextoPronto, Imprimir, Faltando, fmt } fro
 import { cids, apresentacoes, familias, esquemas, exames, examesComplementares, criterios, avaliaCriterio, documentos, unidades, LINK_SESAB, situacaoExame } from "./dados.js";
 import { idadeDe, anosParaEscIdx } from "./processo.js";
 import { textoReceita } from "./textos.js";
+import { configSolicitacao } from "./solic.js";
+import { SolicitarExames } from "../solicitacao.jsx";
 import { meemCutoffs } from "../shared/meem.jsx";
 
 const v = (n) => String(n).replace(".", ",");
@@ -160,6 +162,19 @@ export function Paciente({ pac, upP, d, up }) {
         </div>
       </Cartao>
 
+      <Cartao titulo="Documento e endereço" sub="Usados no pedido de exames (chequinho) e no laudo APAC.">
+        <div className="grid gap-3 sm:grid-cols-6">
+          <Txt className="sm:col-span-3" rot="RG (doc. de identidade)" valor={pac.rg} onChange={(x) => upP("rg", x)} />
+          <Txt className="sm:col-span-3" rot="Nº do prontuário" valor={pac.prontuario} onChange={(x) => upP("prontuario", x)} />
+          <Txt className="sm:col-span-4" rot="Endereço (rua, nº)" valor={pac.endereco} onChange={(x) => upP("endereco", x)} />
+          <Txt className="sm:col-span-2" rot="Bairro" valor={pac.bairro} onChange={(x) => upP("bairro", x)} />
+          <Txt className="sm:col-span-3" rot="Município" valor={pac.municipio} onChange={(x) => upP("municipio", x)} />
+          <Txt className="sm:col-span-1" rot="UF" valor={pac.uf} onChange={(x) => upP("uf", x.toUpperCase().slice(0, 2))} />
+          <Txt className="sm:col-span-2" rot="CEP" valor={pac.cep} onChange={(x) => upP("cep", x)} />
+          <Txt className="sm:col-span-2" rot="Cód. IBGE do município" valor={pac.ibge} onChange={(x) => upP("ibge", x)} dica="Salvador: 2927408" />
+        </div>
+      </Cartao>
+
       <Cartao titulo="Capacidade e responsável legal" sub="LME (campo 13) e Termo de Esclarecimento.">
         <div className="space-y-3">
           <div>
@@ -236,12 +251,16 @@ function LinhaExame({ ex, reg, set, destaque }) {
   );
 }
 
-export function Exames({ d, up, der }) {
+export function Exames({ pac, d, up, der, med }) {
   const set = (id) => (val) => up(`exames.${id}`, val);
+  const cfg = configSolicitacao(pac, d, der);
   const obrig = exames.filter((e) => e.para === "todos" || e.para.some((f) => der.fams.includes(f)));
   const outros = exames.filter((e) => !obrig.includes(e));
   return (
     <div className="space-y-4">
+      <SolicitarExames pac={pac} med={med} solic={d.solic} setSolic={(v) => up("solic", v)} {...cfg} />
+      <div className="space-y-4 print:hidden">
+      <h3 className="pt-2 text-sm font-bold text-slate-700">Resultados recebidos</h3>
       <Cartao titulo="Obrigatórios para o que foi prescrito" sub={der.fams.length ? `Medicamento(s): ${der.nomesFam.join(" + ")}` : "Escolha o medicamento na prescrição para ver os exames específicos."}>
         <div className="space-y-2">
           {obrig.map((e) => <LinhaExame key={e.id} ex={e} reg={d.exames[e.id]} set={set(e.id)} destaque />)}
@@ -260,6 +279,7 @@ export function Exames({ d, up, der }) {
       <Cartao titulo="Complementares (não obrigatórios)" sub="Podem ser solicitados conforme critério médico, de acordo com o PCDT.">
         <div className="space-y-2">{examesComplementares.map((e) => <LinhaExame key={e.id} ex={e} reg={d.exames[e.id]} set={set(e.id)} />)}</div>
       </Cartao>
+      </div>
     </div>
   );
 }
@@ -278,7 +298,8 @@ export function Prescricao({ pac, d, up, der, med }) {
   const texto = textoReceita(pac, d, der, med);
   const temIAChE = der.fams.some((f) => familias[f].classe === "iache");
   return (
-    <div className="space-y-4">
+    <>
+    <div className="space-y-4 print:hidden">
       <Cartao titulo="Escolher o tratamento" sub="Clique na droga e no esquema. Memantina pode ser associada a um inibidor da acetilcolinesterase.">
         <div className="flex flex-wrap gap-1.5 mb-3">
           {Object.entries(familias).map(([k, f]) => (
@@ -340,6 +361,8 @@ export function Prescricao({ pac, d, up, der, med }) {
         <p className="text-[11px] text-slate-400 mt-2">Confira a forma de receituário exigida pela legislação sanitária vigente (Lei 13.732/2018; Portaria SVS/MS 344/1998).</p>
       </Cartao>
 
+    </div>
+
       {/* receita impressa */}
       <div className="hidden print:block text-black text-[12px]">
         <div className="text-center border-b border-black pb-2 mb-4">
@@ -349,6 +372,6 @@ export function Prescricao({ pac, d, up, der, med }) {
         <pre className="whitespace-pre-wrap font-sans leading-relaxed">{texto}</pre>
         <div className="mt-16 w-72 mx-auto border-t border-black text-center text-[10px] pt-1">Assinatura e carimbo</div>
       </div>
-    </div>
+    </>
   );
 }

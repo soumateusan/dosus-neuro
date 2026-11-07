@@ -6,6 +6,21 @@ import { anamneseLME, textoRelatorio, cidDesc } from "./textos.js";
 import { abrirPDF, LME_URL } from "../lme-util.js";
 
 /* ================= LME ================= */
+export function dadosLME(pac, d, der, med) {
+  const anamnese = d.lme.anamneseEditada ? d.lme.anamnese : anamneseLME(pac, d, der);
+  return {
+    cnes: med.cnes, estabelecimento: med.estabelecimento,
+    nome: pac.nome, mae: pac.mae, peso: pac.peso, altura: pac.altura,
+    meds: der.itens.map((i) => ({ lme: apresentacoes[i.ap].lme, meses: i.meses })), cid: d.cid, diagnostico: cidDesc(d.cid), anamnese,
+    tratPrevio: d.hist.tratPrevio, tratTexto: d.hist.tratTexto,
+    incapaz: pac.incapaz, responsavel: pac.responsavel,
+    medico: med.nome, cnsMedico: med.cns, data: fmt(d.lme.data),
+    preenchidoPor: d.lme.preenchidoPor, outroNome: d.lme.outroNome, outroCPF: d.lme.outroCPF,
+    raca: pac.raca, etnia: pac.etnia, tel1: pac.tel1, tel2: pac.tel2,
+    docTipo: d.lme.docTipo, docNumero: d.lme.docTipo === "CNS" ? pac.cns : pac.cpf, email: pac.email,
+  };
+}
+
 export function LME({ pac, d, up, der, med, irPerfil }) {
   const [gerando, setGerando] = useState(false);
   const [erro, setErro] = useState("");
@@ -17,17 +32,7 @@ export function LME({ pac, d, up, der, med, irPerfil }) {
     setGerando(true); setErro("");
     try {
       const { gerarLME } = await import("../lme.js");
-      const bytes = await gerarLME({
-        cnes: med.cnes, estabelecimento: med.estabelecimento,
-        nome: pac.nome, mae: pac.mae, peso: pac.peso, altura: pac.altura,
-        meds: linhas, cid: d.cid, diagnostico: cidDesc(d.cid), anamnese,
-        tratPrevio: d.hist.tratPrevio, tratTexto: d.hist.tratTexto,
-        incapaz: pac.incapaz, responsavel: pac.responsavel,
-        medico: med.nome, cnsMedico: med.cns, data: fmt(d.lme.data),
-        preenchidoPor: d.lme.preenchidoPor, outroNome: d.lme.outroNome, outroCPF: d.lme.outroCPF,
-        raca: pac.raca, etnia: pac.etnia, tel1: pac.tel1, tel2: pac.tel2,
-        docTipo: d.lme.docTipo, docNumero: d.lme.docTipo === "CNS" ? pac.cns : pac.cpf, email: pac.email,
-      });
+      const bytes = await gerarLME(dadosLME(pac, d, der, med));
       abrirPDF(bytes, `LME - ${pac.nome || "paciente"}.pdf`, baixar);
       up("lme.geradoEm", new Date().toISOString());
     } catch (e) {

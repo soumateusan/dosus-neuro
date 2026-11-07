@@ -16,12 +16,14 @@ export const novoAlzheimer = () => ({
     adesao: null, iache: [false, false, false, false], iacheNenhuma: false, gal: null, mem: null, obs: "", data: hojeISO() },
   rel: { extra: "", usadoEm: null },
   exames: {},
+  solic: { marcados: {}, codigos: {}, outros: [], motivo: "", data: hojeISO(), agrupar: false, principal: null, apacObs: "" },
   docs: { ident: false, resid: false },
 });
 
 export const pacienteVazio = () => ({
   nome: "", nascimento: "", idade: "", sexo: "", mae: "", cpf: "", cns: "", peso: "", altura: "",
   tel1: "", tel2: "", email: "", raca: "", etnia: "", escolaridade: "", cidade: "",
+  rg: "", prontuario: "", endereco: "", bairro: "", municipio: "", uf: "BA", cep: "", ibge: "",
   incapaz: false, responsavel: "", respDoc: "", respParentesco: "",
 });
 
