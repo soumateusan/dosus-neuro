@@ -101,7 +101,8 @@ export function FolhaChequinhos({ pac, guias, motivo, data, med }) {
 
 /* dados do laudo APAC a partir do paciente, médico e exames marcados */
 export function dadosAPAC({ pac, med, solic, catalogo, motivoPadrao, obsAPAC, cid, diagnostico }) {
-  const itens = itensSolicitados(solic, catalogo);
+  // exames de laboratório não entram na APAC (só imagem e outros procedimentos)
+  const itens = itensSolicitados(solic, catalogo).filter((i) => i.grupo !== "lab");
   const motivo = solic.motivo || motivoPadrao;
   const principalId = solic.principal && itens.some((i) => i.id === solic.principal) ? solic.principal : (itens.find((i) => i.grupo === "imagem") || itens[0])?.id;
   const ordem = [...itens.filter((i) => i.id === principalId), ...itens.filter((i) => i.id !== principalId)];
@@ -130,7 +131,7 @@ export function SolicitarExames({ pac, med, solic, setSolic, catalogo, grupos, m
   const motivo = s.motivo || motivoPadrao;
   const guias = montarGuias(itens, s.agrupar);
   const texto = textoSolicitacao(pac, itens, motivo, s.data, med);
-  const { principalId } = dadosAPAC({ pac, med, solic: s, catalogo, motivoPadrao, obsAPAC, cid, diagnostico });
+  const { principalId, itens: itensAPAC } = dadosAPAC({ pac, med, solic: s, catalogo, motivoPadrao, obsAPAC, cid, diagnostico });
 
   const toggle = (id) => set("marcados", { ...s.marcados, [id]: !s.marcados[id] });
   const marcar = (ids) => set("marcados", { ...s.marcados, ...Object.fromEntries(ids.map((i) => [i, true])) });
@@ -230,14 +231,15 @@ export function SolicitarExames({ pac, med, solic, setSolic, catalogo, grupos, m
 
           {/* 3. APAC */}
           <div className="rounded-lg border border-slate-200 p-3 space-y-2">
-            <div className="text-sm font-semibold text-slate-800">3. Laudo APAC</div>
+            <div className="text-sm font-semibold text-slate-800">3. Laudo APAC <span className="font-normal text-xs text-slate-500">— só imagem e outros procedimentos; exames de laboratório não entram</span></div>
+            {itensAPAC.length === 0 ? <p className="text-xs text-slate-500">Nenhum exame de imagem ou procedimento marcado.</p> : <>
             <label className="block">
               <span className="block text-[11px] text-slate-500 mb-1">Procedimento principal (os demais entram como secundários)</span>
               <select value={principalId || ""} onChange={(e) => set("principal", e.target.value)} className="w-full rounded-lg border border-slate-200 px-2 py-1.5 text-sm bg-white">
-                {itens.map((i) => <option key={i.id} value={i.id}>{i.nome} — {fmtSigtap(i.cod)}</option>)}
+                {itensAPAC.map((i) => <option key={i.id} value={i.id}>{i.nome} — {fmtSigtap(i.cod)}</option>)}
               </select>
             </label>
-            {itens.length > 6 && <Aviso>O laudo tem 1 principal + 5 secundários: {itens.length - 6} exame(s) ficarão de fora. Gere outro laudo para eles.</Aviso>}
+            {itensAPAC.length > 6 && <Aviso>O laudo tem 1 principal + 5 secundários: {itensAPAC.length - 6} exame(s) ficarão de fora. Gere outro laudo para eles.</Aviso>}
             <label className="block">
               <span className="block text-[11px] text-slate-500 mb-1">40 — Observações (justificativa)</span>
               <textarea rows={4} value={s.apacObs || `${motivo}\n${obsAPAC}`} onChange={(e) => set("apacObs", e.target.value)} className="w-full rounded-lg border border-slate-200 px-3 py-2 text-xs text-slate-700" />
@@ -252,6 +254,7 @@ export function SolicitarExames({ pac, med, solic, setSolic, catalogo, grupos, m
                 <FileDown size={16} /> Baixar PDF
               </button>
             </div>
+          </>}
           </div>
         </div>
       </Cartao>

@@ -101,7 +101,7 @@ export function ImprimirTudo(props) {
       <Cartao titulo="PDFs oficiais" sub="LME e laudo APAC num único PDF.">
         <div className="space-y-1.5">
           <Item on={sel.lme} set={set("lme")} nome="LME" falta={der.faltaLME} />
-          <Item on={sel.apac} set={set("apac")} nome={temExames ? `Laudo APAC (${Math.min(apac.itens.length, 6)} procedimento${apac.itens.length > 1 ? "s" : ""})` : "Laudo APAC — marque os exames na aba Exames"}
+          <Item on={sel.apac} set={set("apac")} nome={temExames ? `Laudo APAC (${Math.min(apac.itens.length, 6)} procedimento${apac.itens.length > 1 ? "s" : ""})` : "Laudo APAC — marque exame de imagem na aba Exames"}
             desab={!temExames} falta={[]} />
         </div>
         {erro && <div className="mt-2"><Aviso tom="rose">{erro}</Aviso></div>}
