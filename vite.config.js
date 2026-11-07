@@ -31,4 +31,5 @@ function serviceWorker() {
 
 export default defineConfig({
   plugins: [react(), serviceWorker()],
+  build: { chunkSizeWarningLimit: 1200 }, // Firebase + pdf-lib: grandes, mas ficam no cache offline
 })

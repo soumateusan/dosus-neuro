@@ -1,12 +1,13 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
   Brain, FolderOpen, UserCog, ChevronDown, ChevronRight, CheckCircle2, Circle, AlertTriangle, Menu, X as Fechar,
-  ClipboardCheck, User, FlaskConical, Pill, FileText, FileSignature, ListChecks, NotebookPen, Calculator, Plus, Save, WifiOff, Printer,
+  ClipboardCheck, User, FlaskConical, LogOut, CloudUpload, Pill, FileText, FileSignature, ListChecks, NotebookPen, Calculator, Plus, Save, WifiOff, Printer,
 } from "lucide-react";
 import { PacienteCtx } from "./shared/ui.jsx";
 import { MEEM } from "./shared/meem.jsx";
 import { CDR } from "./shared/cdr.jsx";
-import { db, novoId, lerConfig, gravarConfig } from "./db.js";
+import { db, novoId, lerConfig, gravarConfig, lerLocalAntigo, importarDados, apagarLocalAntigo } from "./db.js";
+import { sair } from "./nuvem.js";
 import { Cartao, Txt } from "./comum.jsx";
 import { Arquivo } from "./Arquivo.jsx";
 import { novoAlzheimer, pacienteVazio, derivar, idadeDe } from "./alzheimer/processo.js";
@@ -57,7 +58,8 @@ function mesclar(base, salvo) {
 
 const medicoVazio = { nome: "", crm: "", uf: "BA", cns: "", cnes: "", estabelecimento: "", cidade: "", endereco: "" };
 
-export default function DosusApp() {
+export default function DosusApp({ usuario }) {
+  const nomeGoogle = usuario?.displayName || "";
   const [med, setMed] = useState(medicoVazio);
   const [atual, setAtual] = useState(null); // { pacId, pac, procId, patologia, d, criadoEm }
   const [tela, setTela] = useState({ tipo: "arquivo" });
@@ -66,13 +68,28 @@ export default function DosusApp() {
   const [salvoEm, setSalvoEm] = useState(null);
   const [online, setOnline] = useState(navigator.onLine);
   const [versaoArquivo, setVersaoArquivo] = useState(0);
+  const [localAntigo, setLocalAntigo] = useState(null);
+  const [erroGravacao, setErroGravacao] = useState("");
+  const [menuConta, setMenuConta] = useState(false);
+
+  const levarParaConta = async () => {
+    const n = await importarDados(localAntigo);
+    await apagarLocalAntigo();
+    setLocalAntigo(null);
+    lerConfig("medico", null).then((m) => m && setMed({ ...medicoVazio, ...m }));
+    setVersaoArquivo((v) => v + 1);
+    window.alert(`${n} registro(s) levados para a sua conta.`);
+  };
 
   useEffect(() => {
-    lerConfig("medico", medicoVazio).then((m) => setMed({ ...medicoVazio, ...m }));
+    lerConfig("medico", null).then((m) => setMed(m ? { ...medicoVazio, ...m } : { ...medicoVazio, nome: nomeGoogle }));
+    lerLocalAntigo().then(setLocalAntigo);
+    const erroGrav = (e) => setErroGravacao(e.detail);
+    window.addEventListener("dosus-erro-gravacao", erroGrav);
     const on = () => setOnline(true), off = () => setOnline(false);
     window.addEventListener("online", on); window.addEventListener("offline", off);
-    return () => { window.removeEventListener("online", on); window.removeEventListener("offline", off); };
-  }, []);
+    return () => { window.removeEventListener("online", on); window.removeEventListener("offline", off); window.removeEventListener("dosus-erro-gravacao", erroGrav); };
+  }, [nomeGoogle]);
 
   /* salvamento automático (a partir do momento em que o paciente tem nome) */
   const timer = useRef();
@@ -206,6 +223,21 @@ export default function DosusApp() {
               <button onClick={() => novoProcesso()} className="flex items-center gap-1 px-3 py-1.5 rounded-lg bg-teal-600 text-white text-sm font-semibold hover:bg-teal-700 shrink-0">
                 <Plus size={15} /> <span className="hidden sm:inline">Novo paciente</span>
               </button>
+              <div className="relative shrink-0">
+                <button onClick={() => setMenuConta((o) => !o)} title={usuario?.email} className="w-8 h-8 rounded-full overflow-hidden border border-slate-200 bg-teal-100 text-teal-800 text-sm font-bold flex items-center justify-center">
+                  {usuario?.photoURL ? <img src={usuario.photoURL} alt="" referrerPolicy="no-referrer" className="w-full h-full object-cover" /> : (usuario?.email || "?")[0].toUpperCase()}
+                </button>
+                {menuConta && (
+                  <div className="absolute right-0 mt-2 w-64 rounded-xl border border-slate-200 bg-white shadow-lg p-3 z-40">
+                    <div className="text-sm font-semibold text-slate-800 truncate">{usuario?.displayName}</div>
+                    <div className="text-xs text-slate-500 truncate mb-3">{usuario?.email}</div>
+                    <button onClick={sair} className="w-full flex items-center justify-center gap-2 px-3 py-2 rounded-lg border border-slate-200 text-sm font-semibold text-slate-700 hover:border-rose-300 hover:text-rose-700">
+                      <LogOut size={15} /> Sair
+                    </button>
+                    <p className="text-[10px] text-slate-400 mt-2 leading-snug">Ao sair, a cópia guardada neste aparelho é apagada. Os dados continuam na sua conta.</p>
+                  </div>
+                )}
+              </div>
             </div>
           </div>
         </header>
@@ -215,6 +247,27 @@ export default function DosusApp() {
           {menuMovel && <div className="md:hidden fixed inset-0 top-14 z-20 bg-slate-100 p-3 overflow-y-auto print:hidden">{menu}</div>}
 
           <main className="flex-1 min-w-0 max-w-3xl print:max-w-none">
+            {erroGravacao && (
+              <div className="mb-4 rounded-xl border border-rose-200 bg-rose-50 p-3 text-xs text-rose-800 print:hidden">
+                Uma gravação foi recusada pelo servidor ({erroGravacao}). Confira as regras de segurança do Firestore.
+                <button onClick={() => setErroGravacao("")} className="ml-2 font-semibold underline">fechar</button>
+              </div>
+            )}
+            {localAntigo && tela.tipo === "arquivo" && (
+              <div className="mb-4 rounded-xl border border-teal-200 bg-teal-50 p-3 text-sm text-teal-900 print:hidden">
+                <div className="flex items-start gap-2">
+                  <CloudUpload size={18} className="shrink-0 mt-0.5" />
+                  <div className="flex-1">
+                    <p><b>{localAntigo.pacientes.length} paciente(s)</b> estão salvos só neste navegador (versão anterior, sem login). Levar para a sua conta?</p>
+                    <p className="text-xs text-teal-700 mt-0.5">Depois de levar, a cópia antiga deste navegador é apagada.</p>
+                    <div className="flex gap-2 mt-2">
+                      <button onClick={levarParaConta} className="px-3 py-1.5 rounded-lg bg-teal-600 text-white text-xs font-semibold hover:bg-teal-700">Levar para a minha conta</button>
+                      <button onClick={() => setLocalAntigo(null)} className="px-3 py-1.5 rounded-lg bg-white border border-teal-200 text-xs font-semibold">Agora não</button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
             {tela.tipo === "arquivo" && <Arquivo versao={versaoArquivo} onAbrir={abrirProcesso} onRenovar={renovar} onNovo={novoProcesso} atualId={atual?.procId} />}
             {tela.tipo === "perfil" && <Perfil med={med} salvar={salvarMed} />}
             {tela.tipo === "alzheimer" && atual && (
@@ -245,7 +298,7 @@ export default function DosusApp() {
               </>
             )}
             <footer className="mt-8 text-[11px] text-slate-400 leading-relaxed border-t border-slate-200 pt-3 print:hidden">
-              Os dados ficam salvos apenas neste aparelho (navegador). Faça cópias de segurança pelo arquivo de pacientes.
+              Os dados ficam na sua conta ({usuario?.email}) e numa cópia neste aparelho para uso offline; só você tem acesso.
               Confira sempre os documentos antes de assinar — a responsabilidade pelo conteúdo é do médico.
               Critérios conforme o PCDT da Doença de Alzheimer (Portaria Conjunta SAES/SCTIE nº 27/2025) e orientações da SESAB/BA.
             </footer>

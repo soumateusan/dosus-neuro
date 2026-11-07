@@ -52,7 +52,7 @@ export function Arquivo({ versao, onAbrir, onRenovar, onNovo, atualId }) {
       <div className="flex items-end justify-between gap-3 flex-wrap">
         <div>
           <h2 className="text-xl font-bold text-slate-800">Pacientes</h2>
-          <p className="text-xs text-slate-500">{pacs.length} paciente(s) · {procs.length} processo(s) salvos neste aparelho</p>
+          <p className="text-xs text-slate-500">{pacs.length} paciente(s) · {procs.length} processo(s) na sua conta</p>
         </div>
         <button onClick={() => onNovo()} className="flex items-center gap-1 px-3 py-2 rounded-lg bg-teal-600 text-white text-sm font-semibold hover:bg-teal-700">
           <Plus size={15} /> Novo paciente — Alzheimer
@@ -121,7 +121,7 @@ export function Arquivo({ versao, onAbrir, onRenovar, onNovo, atualId }) {
 
       <div className="rounded-xl border border-slate-200 bg-white p-3 space-y-2">
         <div className="flex items-center gap-2 text-sm font-semibold text-slate-700"><ShieldCheck size={16} className="text-teal-600" /> Cópia de segurança</div>
-        <p className="text-xs text-slate-500">Os dados ficam só neste navegador, sem internet e sem servidor. Se limpar os dados do navegador ou trocar de computador, eles se perdem — exporte um backup com frequência e guarde em local seguro (contém dados de saúde).</p>
+        <p className="text-xs text-slate-500">Os dados ficam na sua conta e sincronizam entre aparelhos. O backup em .json é uma cópia extra, para guardar fora da nuvem — guarde em local seguro (contém dados de saúde).</p>
         <div className="flex flex-wrap gap-2">
           <button onClick={exportarBackup} className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-700 text-white text-xs font-semibold hover:bg-slate-800"><Download size={14} /> Exportar backup (.json)</button>
           <button onClick={() => arq.current.click()} className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white border border-slate-200 text-slate-700 text-xs font-semibold hover:border-teal-400"><Upload size={14} /> Importar backup</button>

@@ -8,9 +8,12 @@
     "dev": "vite",
     "build": "vite build",
     "lint": "eslint .",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "emuladores": "firebase emulators:start --project demo-dosus --only auth,firestore",
+    "dev:emulador": "VITE_EMULADOR=1 vite --port 5175"
   },
   "dependencies": {
+    "firebase": "^13.2.0",
     "lucide-react": "^1.70.0",
     "pdf-lib": "^1.17.1",
     "react": "^19.3.1",
@@ -23,6 +26,7 @@
     "eslint": "^10.14.0",
     "eslint-plugin-react-hooks": "^7.1.1",
     "eslint-plugin-react-refresh": "^0.5.7",
+    "firebase-tools": "^15.35.0",
     "globals": "^17.14.0",
     "postcss": "^8.5.32",
     "tailwindcss": "^3.4.19",
