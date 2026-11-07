@@ -1,5 +1,6 @@
 import { useState, createContext, useContext } from "react";
 import { Printer, Copy, Check, RotateCcw, Info } from "lucide-react";
+import { CabecalhoSESAB } from "../cabecalho.jsx";
 
 /* ---------- identificação do paciente, compartilhada entre as abas ---------- */
 export const PacienteCtx = createContext({ nome: "", idade: "", data: "", app: "DOSUS Neuro" });
@@ -29,6 +30,7 @@ export function FichaCabecalho({ titulo, extra }) {
   const p = useContext(PacienteCtx);
   return (
     <div className="mb-3">
+      <CabecalhoSESAB />
       <h1 className="text-center text-sm font-bold uppercase tracking-wide">{titulo}</h1>
       <div className="mt-3 text-[11px] leading-7">
         <div><Campo rot="Nome do paciente" valor={p.nome} w="320px" /></div>

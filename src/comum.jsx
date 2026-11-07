@@ -1,6 +1,5 @@
 import { Check, Copy, Printer, AlertTriangle, Info } from "lucide-react";
 import { useCopyOk } from "./shared/ui.jsx";
-import brasao from "./assets/brasao-bahia.jpg";
 
 /* ---------- campos de formulário ---------- */
 export function Txt({ rot, valor, onChange, tipo = "text", ph, dica, className = "", obrig, area, linhas = 4, ...rest }) {
@@ -111,20 +110,7 @@ export function Imprimir({ label = "Gerar PDF / imprimir", onClick, desab }) {
 }
 
 /* ---------- peças das fichas impressas (padrão SESAB) ---------- */
-export function CabecalhoSESAB() {
-  return (
-    <div className="border-y border-black py-2 mb-4 flex items-center gap-4">
-      <img src={brasao} alt="" className="w-[64px] h-[66px] object-contain ml-8" />
-      <div className="text-[10.5px] leading-[1.25]">
-        <div className="font-bold text-[12px]">GOVERNO DO ESTADO DA BAHIA</div>
-        <div>Secretaria da Saúde do Estado da Bahia - SESAB</div>
-        <div>Superintendência de Assistência Farmacêutica, Ciência e Tecnologia em Saúde - SAFTEC</div>
-        <div>Diretoria de Assistência Farmacêutica – DASF</div>
-        <div>Coordenação de Assistência Farmacêutica na Atenção Especializada - COAFE</div>
-      </div>
-    </div>
-  );
-}
+export { CabecalhoSESAB } from "./cabecalho.jsx";
 
 /* lacuna sublinhada já preenchida */
 export function Lacuna({ v, w = "200px" }) {
