@@ -20,24 +20,8 @@ export const novoAlzheimer = () => ({
   docs: { ident: false, resid: false },
 });
 
-export const pacienteVazio = () => ({
-  nome: "", nascimento: "", idade: "", sexo: "", mae: "", cpf: "", cns: "", peso: "", altura: "",
-  tel1: "", tel2: "", email: "", raca: "", etnia: "", escolaridade: "", cidade: "",
-  rg: "", prontuario: "", endereco: "", bairro: "", municipio: "", uf: "BA", cep: "", ibge: "",
-  incapaz: false, responsavel: "", respDoc: "", respParentesco: "",
-});
+export { pacienteVazio, idadeDe } from "../pacienteComum.jsx";
 
-export function idadeDe(p) {
-  if (p.nascimento) {
-    const n = new Date(p.nascimento + "T00:00:00"), h = new Date();
-    let i = h.getFullYear() - n.getFullYear();
-    if (h.getMonth() < n.getMonth() || (h.getMonth() === n.getMonth() && h.getDate() < n.getDate())) i--;
-    return i >= 0 && i < 130 ? String(i) : "";
-  }
-  return p.idade || "";
-}
-
-/* escolaridade em anos → faixa do corte do MEEM (Brucki 2003) */
 export function anosParaEscIdx(anos) {
   if (anos === "" || anos == null) return null;
   const a = Number(anos);

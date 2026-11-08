@@ -4,11 +4,12 @@ import { db, apagarPaciente, exportarBackup, importarBackup } from "./db.js";
 import { Aviso } from "./comum.jsx";
 import { idadeDe } from "./alzheimer/processo.js";
 
-const nomePat = { alzheimer: "Doença de Alzheimer" };
 const tipoTxt = { inicio: "início", continuidade: "renovação", troca: "troca/aumento" };
 const semAcento = (s) => String(s || "").normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase();
 
-export function Arquivo({ versao, onAbrir, onRenovar, onNovo, atualId }) {
+export function Arquivo({ versao, onAbrir, onRenovar, onNovo, atualId, patologias }) {
+  const nomePat = Object.fromEntries(patologias.map((x) => [x.id, x.nome]));
+  const [novoPara, setNovoPara] = useState(null); // id do paciente com o menu "novo processo" aberto
   const [pacs, setPacs] = useState([]);
   const [procs, setProcs] = useState([]);
   const [busca, setBusca] = useState("");
@@ -54,9 +55,13 @@ export function Arquivo({ versao, onAbrir, onRenovar, onNovo, atualId }) {
           <h2 className="text-xl font-bold text-slate-800">Pacientes</h2>
           <p className="text-xs text-slate-500">{pacs.length} paciente(s) · {procs.length} processo(s) na sua conta</p>
         </div>
-        <button onClick={() => onNovo()} className="flex items-center gap-1 px-3 py-2 rounded-lg bg-teal-600 text-white text-sm font-semibold hover:bg-teal-700">
-          <Plus size={15} /> Novo paciente — Alzheimer
-        </button>
+        <div className="flex flex-wrap gap-2">
+          {patologias.map((x) => (
+            <button key={x.id} onClick={() => onNovo(x.id)} className="flex items-center gap-1 px-3 py-2 rounded-lg bg-teal-600 text-white text-sm font-semibold hover:bg-teal-700">
+              <Plus size={15} /> Novo paciente — {x.nome.replace("Doença de ", "")}
+            </button>
+          ))}
+        </div>
       </div>
 
       <label className="flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-3 py-2.5 focus-within:border-teal-400">
@@ -82,8 +87,19 @@ export function Arquivo({ versao, onAbrir, onRenovar, onNovo, atualId }) {
                 </div>
               </div>
               <div className="flex items-center gap-1 shrink-0">
-                <button title="Novo processo para este paciente" onClick={() => { const { id, atualizadoEm: _a, ...pac } = p; void _a; onNovo(pac, id); }}
-                  className="p-1.5 rounded-lg text-slate-400 hover:text-teal-700 hover:bg-teal-50"><Plus size={16} /></button>
+                <div className="relative">
+                  <button title="Novo processo para este paciente" onClick={() => setNovoPara(novoPara === p.id ? null : p.id)}
+                    className="p-1.5 rounded-lg text-slate-400 hover:text-teal-700 hover:bg-teal-50"><Plus size={16} /></button>
+                  {novoPara === p.id && (
+                    <div className="absolute right-0 mt-1 w-56 rounded-xl border border-slate-200 bg-white shadow-lg p-1.5 z-20">
+                      <div className="px-2 py-1 text-[10px] font-bold uppercase tracking-wider text-slate-400">Novo processo em</div>
+                      {patologias.map((x) => (
+                        <button key={x.id} onClick={() => { setNovoPara(null); const { id, atualizadoEm: _a, ...pac } = p; void _a; onNovo(x.id, pac, id); }}
+                          className="w-full text-left px-2 py-1.5 rounded-lg text-sm text-slate-700 hover:bg-teal-50">{x.nome}</button>
+                      ))}
+                    </div>
+                  )}
+                </div>
                 <button title="Apagar paciente" onClick={() => apagar(p)} className="p-1.5 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50"><Trash2 size={16} /></button>
               </div>
             </div>

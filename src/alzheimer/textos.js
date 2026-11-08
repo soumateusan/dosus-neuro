@@ -1,4 +1,4 @@
-import { apresentacoes, familias, cids, qtdTexto, criterios, acessoTxt, PORTARIA, situacaoExame, todosExames } from "./dados.js";
+import { apresentacoes, familias, cids, criterios, acessoTxt, PORTARIA, situacaoExame, todosExames } from "./dados.js";
 import { idadeDe } from "./processo.js";
 import { meemCutoffs } from "../shared/meem.jsx";
 
@@ -69,31 +69,6 @@ export function anamneseLME(pac, d, der) {
 }
 
 /* prescrição — para colar na prescrição eletrônica */
-export function textoReceita(pac, d, der, med) {
-  const linhas = [];
-  linhas.push(`Paciente: ${pac.nome || "_______________"}`);
-  if (pac.cpf || pac.cns) linhas.push([pac.cpf && `CPF: ${pac.cpf}`, pac.cns && `CNS: ${pac.cns}`].filter(Boolean).join(" · "));
-  linhas.push("");
-  const vias = new Set(der.itens.map((i) => (apresentacoes[i.ap].un === "adesivo" ? "transdérmico" : "oral")));
-  linhas.push(`USO ${[...vias].map((x) => x.toUpperCase()).join(" E ")} — USO CONTÍNUO`);
-  linhas.push("");
-  der.itens.forEach((it, n) => {
-    const ap = apresentacoes[it.ap];
-    const meses = it.meses.filter((q) => q > 0).length;
-    const total = it.meses.reduce((a, b) => a + (Number(b) || 0), 0);
-    const q1 = it.meses.find((q) => q > 0) || 0;
-    const qtd = meses > 1 && it.meses.filter((q) => q > 0).every((q) => q === q1)
-      ? `${qtdTexto(it.ap, q1)} por mês (${meses} meses)`
-      : `${qtdTexto(it.ap, total)}`;
-    linhas.push(`${n + 1}. ${ap.nome} ——— ${qtd}`);
-    linhas.push(`   ${it.pos}`);
-    linhas.push("");
-  });
-  linhas.push(`${med.cidade ? `${med.cidade}, ` : ""}${fmt(d.presc.data)}`);
-  linhas.push("");
-  linhas.push(`${med.nome || "_______________"} — CRM ${med.crm || "____"}/${med.uf || "__"}`);
-  return linhas.join("\n");
-}
 
 /* relatório médico (alternativa ao formulário de acesso) */
 export function textoRelatorio(pac, d, der, med) {

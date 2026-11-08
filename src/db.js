@@ -6,6 +6,7 @@
    As gravações não esperam o servidor (offline elas ficariam pendentes), só a cópia local. */
 import { collection, doc, getDocs, getDoc, setDoc, deleteDoc } from "firebase/firestore";
 import { fs } from "./nuvem.js";
+import { hojeISO } from "./shared/ui.jsx";
 
 let uid = null;
 export const usarConta = (id) => { uid = id; };
@@ -57,7 +58,7 @@ export async function exportarBackup() {
   const blob = new Blob([JSON.stringify(dados, null, 1)], { type: "application/json" });
   const a = document.createElement("a");
   a.href = URL.createObjectURL(blob);
-  a.download = `dosus-neuro-backup-${new Date().toISOString().slice(0, 10)}.json`;
+  a.download = `dosus-neuro-backup-${hojeISO()}.json`;
   a.click();
   setTimeout(() => URL.revokeObjectURL(a.href), 5000);
 }

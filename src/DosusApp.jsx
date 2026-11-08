@@ -1,42 +1,15 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
-  Brain, FolderOpen, UserCog, ChevronDown, ChevronRight, CheckCircle2, Circle, AlertTriangle, Menu, X as Fechar,
-  ClipboardCheck, User, FlaskConical, LogOut, CloudUpload, Pill, FileText, FileSignature, ListChecks, NotebookPen, Calculator, Plus, Save, WifiOff, Printer,
+  FolderOpen, UserCog, ChevronDown, ChevronRight, CheckCircle2, Circle, AlertTriangle, Menu, X as Fechar,
+  LogOut, CloudUpload, FileText, Plus, Save, WifiOff, UserPlus,
 } from "lucide-react";
 import { PacienteCtx } from "./shared/ui.jsx";
-import { MEEM } from "./shared/meem.jsx";
-import { CDR } from "./shared/cdr.jsx";
 import { db, novoId, lerConfig, gravarConfig, lerLocalAntigo, importarDados, apagarLocalAntigo } from "./db.js";
 import { sair } from "./nuvem.js";
 import { Cartao, Txt } from "./comum.jsx";
 import { Arquivo } from "./Arquivo.jsx";
-import { novoAlzheimer, pacienteVazio, derivar, idadeDe } from "./alzheimer/processo.js";
-import { Visao, Paciente, Exames, Prescricao } from "./alzheimer/telas.jsx";
-import { LME, Termo, Acesso, Relatorio } from "./alzheimer/documentos.jsx";
-import { ImprimirTudo } from "./alzheimer/imprimir.jsx";
-
-/* ---------- patologias e seções ---------- */
-const secoesAlz = [
-  { id: "visao", nome: "O que pedir / elegibilidade", icone: ClipboardCheck },
-  { id: "paciente", nome: "Paciente e história", icone: User, chk: [] },
-  { id: "meem", nome: "MEEM", icone: Brain, chk: ["meem"] },
-  { id: "cdr", nome: "CDR", icone: Calculator, chk: ["cdr"] },
-  { id: "exames", nome: "Exames", icone: FlaskConical, chk: ["exames"] },
-  { id: "prescricao", nome: "Prescrição", icone: Pill, chk: ["presc"] },
-  { id: "lme", nome: "LME", icone: FileText, chk: ["lme"] },
-  { id: "termo", nome: "Termo de esclarecimento", icone: FileSignature, chk: ["ter"] },
-  { id: "acesso", nome: "Formulário de acesso", icone: ListChecks },
-  { id: "relatorio", nome: "Relatório médico", icone: NotebookPen },
-  { id: "imprimir", nome: "Imprimir tudo", icone: Printer },
-];
-export const patologias = [
-  { id: "alzheimer", nome: "Doença de Alzheimer", ativo: true },
-  { id: "parkinson", nome: "Doença de Parkinson" },
-  { id: "epilepsia", nome: "Epilepsia" },
-  { id: "em", nome: "Esclerose múltipla" },
-  { id: "distonia", nome: "Distonias e espasticidade" },
-  { id: "miastenia", nome: "Miastenia gravis" },
-];
+import { pacienteVazio, idadeDe } from "./pacienteComum.jsx";
+import { patologias, ativas, patologia } from "./patologias.js";
 
 /* ---------- utilitários de estado ---------- */
 function setIn(obj, caminho, valor) {
@@ -45,12 +18,12 @@ function setIn(obj, caminho, valor) {
   return { ...obj, [k]: setIn(obj?.[k] ?? {}, resto.join("."), valor) };
 }
 /* mescla dados salvos sobre o modelo atual (campos novos ganham valor padrão) */
-function mesclar(base, salvo) {
+function mesclar(base, salvo, inteiros = []) {
   if (!salvo) return base;
   const r = { ...base };
   for (const k of Object.keys(salvo)) {
     const b = base[k], s = salvo[k];
-    r[k] = b && typeof b === "object" && !Array.isArray(b) && s && typeof s === "object" && !Array.isArray(s) && k !== "meem" && k !== "cdr" && k !== "exames"
+    r[k] = b && typeof b === "object" && !Array.isArray(b) && s && typeof s === "object" && !Array.isArray(s) && !inteiros.includes(k)
       ? { ...b, ...s } : s;
   }
   return r;
@@ -63,7 +36,8 @@ export default function DosusApp({ usuario }) {
   const [med, setMed] = useState(medicoVazio);
   const [atual, setAtual] = useState(null); // { pacId, pac, procId, patologia, d, criadoEm }
   const [tela, setTela] = useState({ tipo: "arquivo" });
-  const [abertos, setAbertos] = useState({ alzheimer: true });
+  const [abertos, setAbertos] = useState({ alzheimer: true, epilepsia: true });
+  const [menuNovo, setMenuNovo] = useState(false);
   const [menuMovel, setMenuMovel] = useState(false);
   const [salvoEm, setSalvoEm] = useState(null);
   const [online, setOnline] = useState(navigator.onLine);
@@ -98,7 +72,7 @@ export default function DosusApp({ usuario }) {
     clearTimeout(timer.current);
     timer.current = setTimeout(async () => {
       const agora = new Date().toISOString();
-      const derv = derivar(atual.pac, atual.d, med);
+      const derv = patologia(atual.patologia).derivar(atual.pac, atual.d, med);
       await db.salvar("pacientes", { ...atual.pac, id: atual.pacId, atualizadoEm: agora });
       await db.salvar("processos", {
         id: atual.procId, pacienteId: atual.pacId, patologia: atual.patologia, criadoEm: atual.criadoEm, atualizadoEm: agora,
@@ -113,48 +87,48 @@ export default function DosusApp({ usuario }) {
 
   const salvarMed = (m) => { setMed(m); gravarConfig("medico", m); };
 
-  const der = useMemo(() => (atual ? derivar(atual.pac, atual.d, med) : null), [atual, med]);
+  const mod = atual ? patologia(atual.patologia) : null;
+  const der = useMemo(() => (atual ? patologia(atual.patologia).derivar(atual.pac, atual.d, med) : null), [atual, med]);
   const upP = (k, v) => setAtual((a) => ({ ...a, pac: { ...a.pac, [k]: v } }));
   const up = (caminho, v) => setAtual((a) => ({ ...a, d: setIn(a.d, caminho, typeof v === "function" ? v(caminho.split(".").reduce((o, k) => o?.[k], a.d)) : v) }));
 
-  const ir = (sec) => { setTela({ tipo: "alzheimer", sec }); setMenuMovel(false); window.scrollTo(0, 0); };
+  const ir = (sec) => { setTela({ tipo: "proc", sec }); setMenuMovel(false); setMenuNovo(false); window.scrollTo(0, 0); };
 
-  const novoProcesso = (pac, pacId, base) => {
-    const d = base ? mesclar(novoAlzheimer(), base) : novoAlzheimer();
-    setAtual({ pacId: pacId || novoId(), pac: { ...pacienteVazio(), ...(pac || {}) }, procId: novoId(), patologia: "alzheimer", d, criadoEm: new Date().toISOString() });
+  /* novo processo de uma patologia; com pac/pacId reaproveita o paciente; base = dados copiados (renovação) */
+  const novoProcesso = (patId, pac, pacId, base) => {
+    const m = patologia(patId);
+    const d = base ? mesclar(m.novo(), base, m.inteiros) : m.novo();
+    setAtual({ pacId: pacId || novoId(), pac: { ...pacienteVazio(), ...(pac || {}) }, procId: novoId(), patologia: patId, d, criadoEm: new Date().toISOString() });
+    setAbertos((o) => ({ ...o, [patId]: true }));
     setSalvoEm(null);
     ir(pac?.nome ? "visao" : "paciente");
   };
   const abrirProcesso = (paciente, proc) => {
+    const m = patologia(proc.patologia);
+    if (!m) { window.alert("Esta patologia ainda não está disponível nesta versão."); return; }
     const { id, atualizadoEm: _a, ...pac } = paciente;
     void _a;
-    setAtual({ pacId: id, pac: { ...pacienteVazio(), ...pac }, procId: proc.id, patologia: proc.patologia, d: mesclar(novoAlzheimer(), proc.dados), criadoEm: proc.criadoEm });
+    setAtual({ pacId: id, pac: { ...pacienteVazio(), ...pac }, procId: proc.id, patologia: proc.patologia, d: mesclar(m.novo(), proc.dados, m.inteiros), criadoEm: proc.criadoEm });
+    setAbertos((o) => ({ ...o, [proc.patologia]: true }));
     setSalvoEm(new Date(proc.atualizadoEm));
     ir("visao");
   };
-  /* renovação: copia história, prescrição, exames e formulário; zera MEEM, CDR, datas e documentos gerados */
+  const pacAtual = () => {
+    if (!atual) return [undefined, undefined];
+    return [atual.pac, atual.pacId];
+  };
+  /* renovação: cada patologia decide o que copia do processo anterior */
   const renovar = (paciente, proc) => {
+    const m = patologia(proc.patologia);
+    if (!m) return;
     const { id, atualizadoEm: _a, ...pac } = paciente;
     void _a;
-    const old = proc.dados;
-    const novo = novoAlzheimer();
-    const base = {
-      ...old, tipo: "continuidade",
-      meem: { ...novo.meem, words: old.meem?.words || novo.meem.words, escIdx: old.meem?.escIdx ?? null }, meemData: novo.meemData,
-      cdr: novo.cdr, cdrAplicado: false, cdrData: novo.cdrData,
-      presc: { ...old.presc, data: novo.presc.data },
-      hist: { ...old.hist, tratPrevio: true, tratTexto: old.hist?.tratTexto || (proc.resumo?.meds || []).join(" + "), estab: null },
-      lme: { ...old.lme, anamneseEditada: false, anamnese: "", geradoEm: null, data: novo.lme.data },
-      termo: { ...old.termo, data: novo.termo.data },
-      acesso: { ...old.acesso, data: novo.acesso.data },
-      rel: novo.rel, docs: novo.docs,
-    };
-    novoProcesso(pac, id, base);
+    novoProcesso(proc.patologia, pac, id, m.renovar(proc.dados, proc.resumo));
   };
 
   const ctxPaciente = atual ? {
     nome: atual.pac.nome, idade: idadeDe(atual.pac), app: "DOSUS Neuro",
-    data: tela.sec === "cdr" ? atual.d.cdrData : atual.d.meemData,
+    data: mod?.dataFicha ? mod.dataFicha(tela.sec, atual.d) : "",
   } : { nome: "", idade: "", data: "", app: "DOSUS Neuro" };
 
   const props = atual && { pac: atual.pac, upP, d: atual.d, up, der, med, ir, irPerfil: () => setTela({ tipo: "perfil" }) };
@@ -166,35 +140,50 @@ export default function DosusApp({ usuario }) {
         Perfil do médico {!med.nome && <span className="ml-auto w-2 h-2 rounded-full bg-amber-400" />}
       </BotaoMenu>
       <div className="mt-3 mb-1 px-2 text-[10px] font-bold uppercase tracking-wider text-slate-400">Patologias</div>
-      {patologias.map((p) => (
+      {patologias.map((p) => {
+        const aberto = p.ativo && abertos[p.id];
+        const destaProc = atual?.patologia === p.id;
+        return (
         <div key={p.id}>
           <button disabled={!p.ativo} onClick={() => setAbertos((o) => ({ ...o, [p.id]: !o[p.id] }))}
             className={"w-full flex items-center gap-1.5 px-2 py-1.5 rounded-lg text-left font-semibold " + (p.ativo ? "text-slate-700 hover:bg-slate-200/60" : "text-slate-300 cursor-default")}>
-            {p.ativo ? (abertos[p.id] ? <ChevronDown size={15} /> : <ChevronRight size={15} />) : <span className="w-[15px]" />}
+            {p.ativo ? (aberto ? <ChevronDown size={15} /> : <ChevronRight size={15} />) : <span className="w-[15px]" />}
             <span className="truncate">{p.nome}</span>
             {!p.ativo && <span className="ml-auto text-[9px] font-semibold uppercase">em breve</span>}
+            {destaProc && <span className="ml-auto w-2 h-2 rounded-full bg-teal-500 shrink-0" />}
           </button>
-          {p.ativo && abertos[p.id] && (
+          {aberto && destaProc && (
             <div className="ml-3 pl-2 border-l border-slate-200 flex flex-col gap-0.5 my-1">
-              {secoesAlz.map((s) => {
-                const Ic = s.icone;
-                const sel = tela.tipo === "alzheimer" && tela.sec === s.id;
-                const c = der && s.chk?.length ? der.checklist.find((x) => x.id === s.chk[0]) : null;
-                const okAcesso = der && (s.id === "acesso" ? der.faltaAcesso.length === 0 : s.id === "relatorio" ? der.faltaRel.length === 0 : null);
-                const ok = c ? c.ok : okAcesso;
+              {p.secoes.map((sc) => {
+                const Ic = sc.icone;
+                const sel = tela.tipo === "proc" && tela.sec === sc.id;
+                const ok = der && sc.ok ? sc.ok(der) : null;
                 return (
-                  <button key={s.id} onClick={() => (atual ? ir(s.id) : novoProcesso())}
+                  <button key={sc.id} onClick={() => ir(sc.id)}
                     className={"flex items-center gap-2 px-2 py-1.5 rounded-lg text-left text-[13px] " + (sel ? "bg-teal-600 text-white" : "text-slate-600 hover:bg-slate-200/60")}>
                     <Ic size={14} className="shrink-0" />
-                    <span className="truncate flex-1">{s.nome}</span>
-                    {ok != null && atual && (ok ? <CheckCircle2 size={13} className={sel ? "text-white" : "text-teal-600"} /> : <Circle size={13} className={sel ? "text-teal-100" : "text-slate-300"} />)}
+                    <span className="truncate flex-1">{sc.nome}</span>
+                    {ok != null && (ok ? <CheckCircle2 size={13} className={sel ? "text-white" : "text-teal-600"} /> : <Circle size={13} className={sel ? "text-teal-100" : "text-slate-300"} />)}
                   </button>
                 );
               })}
             </div>
           )}
+          {aberto && !destaProc && (
+            <div className="ml-3 pl-2 border-l border-slate-200 flex flex-col gap-0.5 my-1">
+              {atual?.pac.nome && (
+                <button onClick={() => novoProcesso(p.id, ...pacAtual())} className="flex items-center gap-2 px-2 py-1.5 rounded-lg text-left text-[13px] text-slate-600 hover:bg-slate-200/60">
+                  <Plus size={14} className="shrink-0" /><span className="truncate">Novo processo — {atual.pac.nome.split(" ")[0]}</span>
+                </button>
+              )}
+              <button onClick={() => novoProcesso(p.id)} className="flex items-center gap-2 px-2 py-1.5 rounded-lg text-left text-[13px] text-slate-600 hover:bg-slate-200/60">
+                <UserPlus size={14} className="shrink-0" /> Novo paciente
+              </button>
+            </div>
+          )}
         </div>
-      ))}
+        );
+      })}
     </nav>
   );
 
@@ -220,9 +209,19 @@ export default function DosusApp({ usuario }) {
                   </div>
                 </div>
               )}
-              <button onClick={() => novoProcesso()} className="flex items-center gap-1 px-3 py-1.5 rounded-lg bg-teal-600 text-white text-sm font-semibold hover:bg-teal-700 shrink-0">
-                <Plus size={15} /> <span className="hidden sm:inline">Novo paciente</span>
-              </button>
+              <div className="relative shrink-0">
+                <button onClick={() => setMenuNovo((o) => !o)} className="flex items-center gap-1 px-3 py-1.5 rounded-lg bg-teal-600 text-white text-sm font-semibold hover:bg-teal-700">
+                  <Plus size={15} /> <span className="hidden sm:inline">Novo paciente</span>
+                </button>
+                {menuNovo && (
+                  <div className="absolute right-0 mt-2 w-60 rounded-xl border border-slate-200 bg-white shadow-lg p-1.5 z-40">
+                    <div className="px-2 py-1 text-[10px] font-bold uppercase tracking-wider text-slate-400">Novo paciente em</div>
+                    {ativas.map((p) => (
+                      <button key={p.id} onClick={() => novoProcesso(p.id)} className="w-full text-left px-2 py-2 rounded-lg text-sm text-slate-700 hover:bg-teal-50">{p.nome}</button>
+                    ))}
+                  </div>
+                )}
+              </div>
               <div className="relative shrink-0">
                 <button onClick={() => setMenuConta((o) => !o)} title={usuario?.email} className="w-8 h-8 rounded-full overflow-hidden border border-slate-200 bg-teal-100 text-teal-800 text-sm font-bold flex items-center justify-center">
                   {usuario?.photoURL ? <img src={usuario.photoURL} alt="" referrerPolicy="no-referrer" className="w-full h-full object-cover" /> : (usuario?.email || "?")[0].toUpperCase()}
@@ -268,43 +267,23 @@ export default function DosusApp({ usuario }) {
                 </div>
               </div>
             )}
-            {tela.tipo === "arquivo" && <Arquivo versao={versaoArquivo} onAbrir={abrirProcesso} onRenovar={renovar} onNovo={novoProcesso} atualId={atual?.procId} />}
+            {tela.tipo === "arquivo" && <Arquivo versao={versaoArquivo} onAbrir={abrirProcesso} onRenovar={renovar} onNovo={novoProcesso} atualId={atual?.procId} patologias={ativas} />}
             {tela.tipo === "perfil" && <Perfil med={med} salvar={salvarMed} />}
-            {tela.tipo === "alzheimer" && atual && (
+            {tela.tipo === "proc" && atual && mod && (
               <>
-                <TituloSecao sec={tela.sec} pac={atual.pac} der={der} />
+                <TituloSecao mod={mod} sec={tela.sec} pac={atual.pac} der={der} />
                 {der && <ChecklistMovel der={der} d={atual.d} up={up} ir={ir} />}
-                {tela.sec === "visao" && <Visao {...props} />}
-                {tela.sec === "paciente" && <Paciente {...props} />}
-                {tela.sec === "meem" && (
-                  <div className="space-y-3">
-                    <DataAplicacao valor={atual.d.meemData} onChange={(v) => up("meemData", v)} />
-                    <MEEM estado={atual.d.meem} setEstado={(v) => up("meem", v)} />
-                  </div>
-                )}
-                {tela.sec === "cdr" && (
-                  <div className="space-y-3">
-                    <DataAplicacao valor={atual.d.cdrData} onChange={(v) => up("cdrData", v)} />
-                    <CDR estado={atual.d.cdr} setEstado={(v) => setAtual((a) => ({ ...a, d: { ...a.d, cdr: typeof v === "function" ? v(a.d.cdr) : v, cdrAplicado: true } }))} />
-                  </div>
-                )}
-                {tela.sec === "exames" && <Exames {...props} />}
-                {tela.sec === "prescricao" && <Prescricao {...props} />}
-                {tela.sec === "lme" && <LME {...props} />}
-                {tela.sec === "termo" && <Termo {...props} />}
-                {tela.sec === "acesso" && <Acesso {...props} />}
-                {tela.sec === "relatorio" && <Relatorio {...props} />}
-                {tela.sec === "imprimir" && <ImprimirTudo {...props} />}
+                {mod.render(tela.sec, props)}
               </>
             )}
             <footer className="mt-8 text-[11px] text-slate-400 leading-relaxed border-t border-slate-200 pt-3 print:hidden">
               Os dados ficam na sua conta ({usuario?.email}) e numa cópia neste aparelho para uso offline; só você tem acesso.
-              Confira sempre os documentos antes de assinar — a responsabilidade pelo conteúdo é do médico.
-              Critérios conforme o PCDT da Doença de Alzheimer (Portaria Conjunta SAES/SCTIE nº 27/2025) e orientações da SESAB/BA.
+              Confira sempre os documentos antes de assinar — a responsabilidade pelo conteúdo é do médico.{" "}
+              {mod && tela.tipo === "proc" ? mod.rodape : "Critérios conforme os PCDT do Ministério da Saúde e as orientações da SESAB/BA."}
             </footer>
           </main>
 
-          {atual && der && tela.tipo === "alzheimer" && (
+          {atual && der && tela.tipo === "proc" && (
             <aside className="hidden xl:block w-72 shrink-0 sticky top-[4.5rem] print:hidden">
               <Checklist der={der} d={atual.d} up={up} ir={ir} />
             </aside>
@@ -324,23 +303,14 @@ function BotaoMenu({ ativo, icone: Ic, onClick, children }) {
   );
 }
 
-function TituloSecao({ sec, pac, der }) {
-  const s = secoesAlz.find((x) => x.id === sec);
+function TituloSecao({ mod, sec, pac, der }) {
+  const s = mod.secoes.find((x) => x.id === sec);
   return (
     <div className="mb-3 print:hidden">
-      <div className="text-[11px] font-semibold uppercase tracking-wide text-teal-700">Doença de Alzheimer</div>
+      <div className="text-[11px] font-semibold uppercase tracking-wide text-teal-700">{mod.nome}</div>
       <h2 className="text-xl font-bold text-slate-800">{s?.nome}</h2>
       {pac.nome && <p className="text-xs text-slate-500">{pac.nome}{idadeDe(pac) ? `, ${idadeDe(pac)} anos` : ""}{der?.nomesFam.length ? ` · ${der.nomesFam.join(" + ")}` : ""}</p>}
     </div>
-  );
-}
-
-function DataAplicacao({ valor, onChange }) {
-  return (
-    <label className="flex items-center gap-2 text-xs text-slate-500 print:hidden">
-      Data da aplicação
-      <input type="date" value={valor || ""} onChange={(e) => onChange(e.target.value)} className="rounded-lg border border-slate-200 px-2 py-1 text-sm bg-white" />
-    </label>
   );
 }
 

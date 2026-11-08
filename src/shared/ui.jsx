@@ -11,7 +11,11 @@ export function useEstado(inicial, estado, setEstado) {
   if (setEstado) return [estado ?? inicial, (v) => setEstado(typeof v === "function" ? v(estado ?? inicial) : v)];
   return [interno, setInterno];
 }
-export const hojeISO = () => new Date().toISOString().slice(0, 10);
+/* data de hoje no fuso do aparelho (toISOString usaria UTC e viraria o dia às 21h no Brasil) */
+export const hojeISO = () => {
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+};
 export const fmtData = (iso) => (iso && /^\d{4}-\d{2}-\d{2}$/.test(iso) ? iso.split("-").reverse().join("/") : iso || "");
 
 /* linha pontilhada de formulário, usada só na impressão */

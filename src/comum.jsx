@@ -129,3 +129,12 @@ export const dataExtenso = (iso) => {
   const d = new Date(iso + "T00:00:00");
   return d.toLocaleDateString("pt-BR", { day: "numeric", month: "long", year: "numeric" });
 };
+
+export function DataAplicacao({ valor, onChange }) {
+  return (
+    <label className="flex items-center gap-2 text-xs text-slate-500 print:hidden">
+      Data da aplicação
+      <input type="date" value={valor || ""} onChange={(e) => onChange(e.target.value)} className="rounded-lg border border-slate-200 px-2 py-1 text-sm bg-white" />
+    </label>
+  );
+}

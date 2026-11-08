@@ -1,11 +1,12 @@
-import { useState } from "react";
-import { Plus, Trash2, ExternalLink, CheckCircle2, Circle, AlertTriangle, MapPin } from "lucide-react";
-import { Txt, Escolha, Marca, Cartao, TextoPronto, Imprimir, Faltando, fmt } from "../comum.jsx";
-import { cids, apresentacoes, familias, esquemas, exames, examesComplementares, criterios, avaliaCriterio, documentos, unidades, LINK_SESAB, situacaoExame } from "./dados.js";
-import { idadeDe, anosParaEscIdx } from "./processo.js";
-import { textoReceita } from "./textos.js";
+import { ExternalLink, CheckCircle2, Circle, AlertTriangle, MapPin } from "lucide-react";
+import { Txt, Escolha, Cartao, fmt } from "../comum.jsx";
+import { cids, apresentacoes, familias, esquemas, exames, examesComplementares, criterios, avaliaCriterio, documentos, unidades, LINK_SESAB } from "./dados.js";
+import { anosParaEscIdx } from "./processo.js";
+import { CartaoSolicitacao, CartoesIdentificacao } from "../pacienteComum.jsx";
 import { configSolicitacao } from "./solic.js";
 import { SolicitarExames } from "../solicitacao.jsx";
+import { LinhaExame } from "../exames.jsx";
+import { Prescricao as PrescricaoBase } from "../prescricao.jsx";
 import { meemCutoffs } from "../shared/meem.jsx";
 
 const v = (n) => String(n).replace(".", ",");
@@ -109,85 +110,18 @@ export function Visao({ pac, d, der, ir }) {
 
 /* ================= PACIENTE E HISTÓRIA CLÍNICA ================= */
 export function Paciente({ pac, upP, d, up }) {
-  const idade = idadeDe(pac);
   const setEsc = (val) => {
     upP("escolaridade", val);
     up("meem", { ...d.meem, escIdx: anosParaEscIdx(val) });
   };
   return (
     <div className="space-y-4">
-      <Cartao titulo="Solicitação">
-        <div className="space-y-3">
-          <div>
-            <span className="block text-[11px] text-slate-500 mb-1">Tipo de solicitação</span>
-            <Escolha valor={d.tipo} onChange={(x) => up("tipo", x || "inicio")} opcoes={[["inicio", "Início de tratamento"], ["continuidade", "Continuidade (renovação)"], ["troca", "Troca de medicamento / aumento de dose"]]} />
-          </div>
-          <div>
-            <span className="block text-[11px] text-slate-500 mb-1">CID-10 <span className="text-rose-500">*</span></span>
-            <div className="grid sm:grid-cols-2 gap-1.5">
-              {cids.map((c) => (
-                <Marca key={c.cod} checked={d.cid === c.cod} onToggle={() => up("cid", d.cid === c.cod ? "" : c.cod)}>
-                  <b>{c.cod}</b> {c.desc}
-                </Marca>
-              ))}
-            </div>
-          </div>
-        </div>
-      </Cartao>
+      <CartaoSolicitacao d={d} up={up} cids={cids} />
 
-      <Cartao titulo="Identificação do paciente" sub="Fica salva no arquivo e preenche automaticamente todos os documentos.">
-        <div className="grid gap-3 sm:grid-cols-6">
-          <Txt className="sm:col-span-6" rot="Nome completo" obrig valor={pac.nome} onChange={(x) => upP("nome", x)} />
-          <Txt className="sm:col-span-6" rot="Nome da mãe" obrig valor={pac.mae} onChange={(x) => upP("mae", x)} />
-          <Txt className="sm:col-span-2" rot="Nascimento" tipo="date" valor={pac.nascimento} onChange={(x) => upP("nascimento", x)} dica={idade ? `${idade} anos` : ""} />
-          {!pac.nascimento && <Txt className="sm:col-span-1" rot="Idade" tipo="number" valor={pac.idade} onChange={(x) => upP("idade", x)} />}
-          <div className={pac.nascimento ? "sm:col-span-4" : "sm:col-span-3"}>
-            <span className="block text-[11px] text-slate-500 mb-1">Sexo</span>
-            <Escolha valor={pac.sexo} onChange={(x) => upP("sexo", x || "")} opcoes={[["F", "Feminino"], ["M", "Masculino"]]} />
-          </div>
-          <Txt className="sm:col-span-3" rot="CPF" valor={pac.cpf} onChange={(x) => upP("cpf", x)} />
-          <Txt className="sm:col-span-3" rot="Cartão SUS (CNS)" valor={pac.cns} onChange={(x) => upP("cns", x)} />
-          <Txt className="sm:col-span-2" rot="Peso (kg)" obrig tipo="number" valor={pac.peso} onChange={(x) => upP("peso", x)} />
-          <Txt className="sm:col-span-2" rot="Altura (cm)" obrig tipo="number" valor={pac.altura} onChange={(x) => upP("altura", x)} />
-          <Txt className="sm:col-span-2" rot="Escolaridade (anos de estudo)" obrig tipo="number" min={0} valor={pac.escolaridade} onChange={setEsc}
-            dica={pac.escolaridade !== "" ? (Number(pac.escolaridade) <= 4 ? "≤ 4 anos — faixas de baixa escolaridade" : "> 4 anos") + ` · corte MEEM ${meemCutoffs[anosParaEscIdx(pac.escolaridade)][1]}` : ""} />
-          <Txt className="sm:col-span-3" rot="Telefone 1" valor={pac.tel1} onChange={(x) => upP("tel1", x)} />
-          <Txt className="sm:col-span-3" rot="Telefone 2" valor={pac.tel2} onChange={(x) => upP("tel2", x)} />
-          <Txt className="sm:col-span-6" rot="E-mail" tipo="email" valor={pac.email} onChange={(x) => upP("email", x)} />
-          <div className="sm:col-span-6">
-            <span className="block text-[11px] text-slate-500 mb-1">Raça/cor (autodeclarada)</span>
-            <Escolha valor={pac.raca} onChange={(x) => upP("raca", x || "")} opcoes={[["branca", "Branca"], ["preta", "Preta"], ["parda", "Parda"], ["amarela", "Amarela"], ["indigena", "Indígena"]]} />
-          </div>
-          {pac.raca === "indigena" && <Txt className="sm:col-span-6" rot="Etnia" valor={pac.etnia} onChange={(x) => upP("etnia", x)} />}
-        </div>
-      </Cartao>
-
-      <Cartao titulo="Documento e endereço" sub="Usados no pedido de exames (chequinho) e no laudo APAC.">
-        <div className="grid gap-3 sm:grid-cols-6">
-          <Txt className="sm:col-span-3" rot="RG (doc. de identidade)" valor={pac.rg} onChange={(x) => upP("rg", x)} />
-          <Txt className="sm:col-span-3" rot="Nº do prontuário" valor={pac.prontuario} onChange={(x) => upP("prontuario", x)} />
-          <Txt className="sm:col-span-4" rot="Endereço (rua, nº)" valor={pac.endereco} onChange={(x) => upP("endereco", x)} />
-          <Txt className="sm:col-span-2" rot="Bairro" valor={pac.bairro} onChange={(x) => upP("bairro", x)} />
-          <Txt className="sm:col-span-3" rot="Município" valor={pac.municipio} onChange={(x) => upP("municipio", x)} />
-          <Txt className="sm:col-span-1" rot="UF" valor={pac.uf} onChange={(x) => upP("uf", x.toUpperCase().slice(0, 2))} />
-          <Txt className="sm:col-span-2" rot="CEP" valor={pac.cep} onChange={(x) => upP("cep", x)} />
-          <Txt className="sm:col-span-2" rot="Cód. IBGE do município" valor={pac.ibge} onChange={(x) => upP("ibge", x)} dica="Salvador: 2927408" />
-        </div>
-      </Cartao>
-
-      <Cartao titulo="Capacidade e responsável legal" sub="LME (campo 13) e Termo de Esclarecimento.">
-        <div className="space-y-3">
-          <div>
-            <span className="block text-[11px] text-slate-500 mb-1">Paciente considerado incapaz (arts. 3º e 4º do Código Civil)?</span>
-            <Escolha valor={pac.incapaz} onChange={(x) => upP("incapaz", !!x)} opcoes={[[false, "Não"], [true, "Sim"]]} />
-          </div>
-          <div className="grid gap-3 sm:grid-cols-6">
-            <Txt className="sm:col-span-3" rot={`Responsável legal${pac.incapaz ? " *" : ""}`} valor={pac.responsavel} onChange={(x) => upP("responsavel", x)} />
-            <Txt className="sm:col-span-2" rot="Doc. de identidade do responsável" valor={pac.respDoc} onChange={(x) => upP("respDoc", x)} />
-            <Txt className="sm:col-span-1" rot="Parentesco" valor={pac.respParentesco} onChange={(x) => upP("respParentesco", x)} />
-          </div>
-        </div>
-      </Cartao>
+      <CartoesIdentificacao pac={pac} upP={upP} escolaridade={{
+        onChange: setEsc,
+        dica: pac.escolaridade !== "" ? (Number(pac.escolaridade) <= 4 ? "≤ 4 anos — faixas de baixa escolaridade" : "> 4 anos") + ` · corte MEEM ${meemCutoffs[anosParaEscIdx(pac.escolaridade)][1]}` : "",
+      }} />
 
       <Cartao titulo="História clínica" sub="Alimenta a anamnese do LME e o relatório médico.">
         <div className="grid gap-3">
@@ -222,35 +156,6 @@ export function Paciente({ pac, upP, d, up }) {
 }
 
 /* ================= EXAMES ================= */
-function LinhaExame({ ex, reg, set, destaque }) {
-  const sit = situacaoExame(ex, reg);
-  const r = reg || {};
-  return (
-    <div className={"rounded-lg border p-2.5 " + (destaque ? (sit.ok ? "border-teal-200 bg-teal-50/40" : "border-amber-200 bg-amber-50/40") : "border-slate-200")}>
-      <div className="flex items-start gap-2">
-        <div className="w-6 pt-1"><input type="checkbox" checked={!!r.feito} onChange={(e) => set({ ...r, feito: e.target.checked })} className="w-4 h-4 accent-teal-600" /></div>
-        <div className="flex-1 min-w-0">
-          <div className="flex flex-wrap items-baseline justify-between gap-x-2">
-            <span className="text-sm font-semibold text-slate-700">{ex.nome}</span>
-            <span className={"text-[11px] " + (sit.ok ? "text-teal-700" : r.feito ? "text-amber-700" : "text-slate-400")}>
-              {ex.val ? `validade ${ex.val} meses · ` : ""}{sit.txt}
-            </span>
-          </div>
-          {ex.nota && <div className="text-[11px] text-slate-400">{ex.nota}</div>}
-          {r.feito && (
-            <div className="mt-2 grid grid-cols-[9.5rem_1fr] gap-2">
-              <input type="date" value={r.data || ""} onChange={(e) => set({ ...r, data: e.target.value })}
-                className="rounded-lg border border-slate-200 px-2 py-1.5 text-sm" />
-              {ex.id !== "img" && <input placeholder="resultado (opcional)" value={r.resultado || ""} onChange={(e) => set({ ...r, resultado: e.target.value })}
-                className="rounded-lg border border-slate-200 px-2 py-1.5 text-sm" />}
-            </div>
-          )}
-        </div>
-      </div>
-    </div>
-  );
-}
-
 export function Exames({ pac, d, up, der, med }) {
   const set = (id) => (val) => up(`exames.${id}`, val);
   const cfg = configSolicitacao(pac, d, der);
@@ -285,93 +190,14 @@ export function Exames({ pac, d, up, der, med }) {
 }
 
 /* ================= PRESCRIÇÃO ================= */
-export function Prescricao({ pac, d, up, der, med }) {
-  const [fam, setFam] = useState(null);
-  const itens = d.presc.itens;
-  const setItens = (n) => up("presc.itens", n);
-  const addEsquema = (e) => {
-    const outros = itens.filter((i) => apresentacoes[i.ap].fam !== e.fam);
-    setItens([...outros, ...e.itens.map((i) => ({ ...i, meses: [...i.meses] }))].slice(0, 6));
-    setFam(null);
-  };
-  const setItem = (k, campo, val) => setItens(itens.map((it, i) => (i === k ? { ...it, [campo]: val } : it)));
-  const texto = textoReceita(pac, d, der, med);
-  const temIAChE = der.fams.some((f) => familias[f].classe === "iache");
-  return (
-    <>
-    <div className="space-y-4 print:hidden">
-      <Cartao titulo="Escolher o tratamento" sub="Clique na droga e no esquema. Memantina pode ser associada a um inibidor da acetilcolinesterase.">
-        <div className="flex flex-wrap gap-1.5 mb-3">
-          {Object.entries(familias).map(([k, f]) => (
-            <button key={k} onClick={() => setFam(fam === k ? null : k)}
-              className={"px-3 py-1.5 rounded-lg text-sm font-semibold border " + (fam === k ? "bg-teal-600 border-teal-600 text-white" : der.fams.includes(k) ? "bg-teal-50 border-teal-300 text-teal-800" : "bg-white border-slate-200 text-slate-600 hover:border-teal-400")}>
-              {f.nome}
-            </button>
-          ))}
-        </div>
-        {fam && (
-          <div className="grid gap-1.5 sm:grid-cols-2">
-            {esquemas.filter((e) => e.fam === fam).map((e) => (
-              <button key={e.id} onClick={() => addEsquema(e)}
-                className="text-left rounded-lg border border-slate-200 px-3 py-2 text-sm text-slate-700 hover:border-teal-400 hover:bg-teal-50">
-                <Plus size={13} className="inline mr-1 text-teal-600" />{e.nome}
-              </button>
-            ))}
-          </div>
-        )}
-        {fam === "mem" && !temIAChE && <p className="text-xs text-slate-400 mt-2">Sem inibidor associado = memantina em monoterapia (MEEM 5–11 / 3–7 e CDR 3).</p>}
-        {fam && fam !== "mem" && temIAChE && !der.fams.includes(fam) && <p className="text-xs text-amber-600 mt-2">Ao escolher, o inibidor anterior será mantido — remova-o abaixo se for troca.</p>}
-      </Cartao>
-
-      {itens.length > 0 && (
-        <Cartao titulo="Itens da prescrição e do LME" sub="Quantidade por mês = colunas do LME (renovação semestral). Edite se precisar.">
-          <div className="space-y-3">
-            {itens.map((it, k) => (
-              <div key={k} className="rounded-lg border border-slate-200 p-3 space-y-2">
-                <div className="flex items-center justify-between gap-2">
-                  <select value={it.ap} onChange={(e) => setItem(k, "ap", e.target.value)}
-                    className="flex-1 min-w-0 rounded-lg border border-slate-200 px-2 py-1.5 text-sm font-semibold text-slate-800 bg-white">
-                    {Object.entries(apresentacoes).map(([id, a]) => <option key={id} value={id}>{a.nome} — grupo {a.grupo}</option>)}
-                  </select>
-                  <button onClick={() => setItens(itens.filter((_, i) => i !== k))} className="text-slate-400 hover:text-rose-600 p-1"><Trash2 size={16} /></button>
-                </div>
-                <textarea rows={2} value={it.pos} onChange={(e) => setItem(k, "pos", e.target.value)}
-                  className="w-full rounded-lg border border-slate-200 px-2.5 py-1.5 text-sm text-slate-700" />
-                <div className="grid grid-cols-6 gap-1.5">
-                  {it.meses.map((q, j) => (
-                    <label key={j} className="block">
-                      <span className="block text-[10px] text-slate-400 text-center">{j + 1}º mês</span>
-                      <input type="number" min={0} value={q} onChange={(e) => setItem(k, "meses", it.meses.map((x, i) => (i === j ? Math.max(0, parseInt(e.target.value || "0", 10) || 0) : x)))}
-                        className="w-full rounded-lg border border-slate-200 px-1 py-1 text-sm text-center" />
-                    </label>
-                  ))}
-                </div>
-              </div>
-            ))}
-          </div>
-        </Cartao>
-      )}
-
-      <Cartao titulo="Prescrição pronta" direita={<input type="date" value={d.presc.data} onChange={(e) => up("presc.data", e.target.value)} className="rounded-lg border border-slate-200 px-2 py-1 text-xs" />}>
-        <Faltando itens={der.faltaPresc} ok="Prescrição completa — copie para a prescrição eletrônica ou imprima." />
-        <div className="mt-3 space-y-2">
-          <TextoPronto texto={texto} linhas={12} />
-          <Imprimir label="Imprimir receita" desab={!itens.length} />
-        </div>
-        <p className="text-[11px] text-slate-400 mt-2">Confira a forma de receituário exigida pela legislação sanitária vigente (Lei 13.732/2018; Portaria SVS/MS 344/1998).</p>
-      </Cartao>
-
-    </div>
-
-      {/* receita impressa */}
-      <div className="hidden print:block text-black text-[12px]">
-        <div className="text-center border-b border-black pb-2 mb-4">
-          <div className="font-bold text-[14px]">{med.estabelecimento || "RECEITUÁRIO"}</div>
-          {med.endereco && <div className="text-[10px]">{med.endereco}</div>}
-        </div>
-        <pre className="whitespace-pre-wrap font-sans leading-relaxed">{texto}</pre>
-        <div className="mt-16 w-72 mx-auto border-t border-black text-center text-[10px] pt-1">Assinatura e carimbo</div>
-      </div>
-    </>
-  );
-}
+const catAlz = {
+  apresentacoes, familias, esquemas,
+  sub: "Clique na droga e no esquema. Memantina pode ser associada a um inibidor da acetilcolinesterase.",
+  avisos: (fam, der) => {
+    const temIAChE = der.fams.some((f) => familias[f].classe === "iache");
+    if (fam === "mem" && !temIAChE) return <p className="text-xs text-slate-400 mt-2">Sem inibidor associado = memantina em monoterapia (MEEM 5–11 / 3–7 e CDR 3).</p>;
+    if (fam && fam !== "mem" && temIAChE && !der.fams.includes(fam)) return <p className="text-xs text-amber-600 mt-2">Ao escolher, o inibidor anterior será mantido — remova-o abaixo se for troca.</p>;
+    return null;
+  },
+};
+export const Prescricao = (props) => <PrescricaoBase {...props} cat={catAlz} />;

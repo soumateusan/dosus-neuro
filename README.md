@@ -26,6 +26,14 @@ Segue o PCDT (Portaria Conjunta SAES/SCTIE nº 27/2025) e as orientações da SE
 - **Imprimir tudo** — Termo (1 ou 2 vias), Formulário de acesso, MEEM e CDR numa só impressão; LME + APAC num único PDF.
 - **Checklist em tempo real** — mostra o que falta em cada documento.
 
+## Epilepsia
+
+Segue o PCDT (Portaria Conjunta SAES/SCTIE nº 17/2018) e as orientações da SESAB/BA: CIDs G40.0–G40.8, os 15
+medicamentos do CEAF (levetiracetam, lamotrigina, topiramato, clobazam, gabapentina, vigabatrina, etossuximida) com
+esquemas prontos, crises pela ILAE 2017, tratamento (1ª/2ª monoterapia, associação) com alerta quando a associação
+foge de "espectro amplo + restrito", termo e formulário de acesso nos modelos da SESAB de 2026, relatório, exames
+(EEG, RM e monitoramento anual) e Imprimir tudo.
+
 **Login com Google:** cada conta tem o próprio perfil e os próprios pacientes, guardados no Firestore em
 `users/{uid}/…` (as regras em `firestore.rules` impedem uma conta de ver a outra). O app guarda uma cópia no
 aparelho para funcionar offline e sincroniza quando a conexão volta; ao **sair**, essa cópia é apagada.
@@ -68,6 +76,11 @@ regras de segurança, oriente os pacientes e não compartilhe a conta.
 
 ## Para adicionar uma patologia
 
-1. `src/<patologia>/dados.js` — CIDs, medicamentos (texto exato da lista do LME), exames, critérios.
-2. `processo.js` — modelo de dados e `derivar()` (o que falta em cada documento → checklist).
-3. Telas e documentos impressos; registrar em `patologias` e nas seções em `src/DosusApp.jsx`.
+Partes comuns (já prontas): identificação do paciente (`pacienteComum.jsx`), prescrição (`prescricao.jsx`), LME
+(`lmeTela.jsx`, `lme.js`), solicitação de exames/chequinho/APAC (`solicitacao.jsx`, `apac.js`), resultados de
+exames (`exames.jsx`), Imprimir tudo (`imprimirTudo.jsx`), checklist e arquivo.
+
+1. `src/<patologia>/dados.js` — CIDs, apresentações (texto exato da lista do LME), esquemas, exames, critérios.
+2. `processo.js` — modelo de dados (`novo…`) e `derivar()` (o que falta em cada documento → checklist).
+3. `telas.jsx`, `documentos.jsx` (termo, formulário, relatório nos modelos da SESAB), `textos.js`.
+4. `index.jsx` — o módulo: seções do menu, `render()`, `renovar()`; registre em `src/patologias.js`.
