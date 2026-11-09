@@ -34,6 +34,14 @@ esquemas prontos, crises pela ILAE 2017, tratamento (1ª/2ª monoterapia, associ
 foge de "espectro amplo + restrito", termo e formulário de acesso nos modelos da SESAB de 2026, relatório, exames
 (EEG, RM e monitoramento anual) e Imprimir tudo.
 
+## Doença de Parkinson
+
+Segue o PCDT (Portaria Conjunta SAES/SECTICS nº 16/2025) e as orientações da SESAB/BA: CID G20; pramipexol,
+rasagilina, entacapona, amantadina, clozapina e rivastigmina com esquemas prontos; formulário de acesso de 2026
+(critérios obrigatórios, classificação provável/estabelecida, suporte, sinais de alerta, exclusão, demência na DP,
+antecedentes, contraindicações da rasagilina e levodopa para a entacapona); MEEM e CDR quando há rivastigmina;
+exames por medicamento (TGO/TGP, ureia/creatinina, hemograma); termo, relatório e Imprimir tudo.
+
 **Login com Google:** cada conta tem o próprio perfil e os próprios pacientes, guardados no Firestore em
 `users/{uid}/…` (as regras em `firestore.rules` impedem uma conta de ver a outra). O app guarda uma cópia no
 aparelho para funcionar offline e sincroniza quando a conexão volta; ao **sair**, essa cópia é apagada.

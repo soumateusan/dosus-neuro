@@ -36,7 +36,7 @@ export default function DosusApp({ usuario }) {
   const [med, setMed] = useState(medicoVazio);
   const [atual, setAtual] = useState(null); // { pacId, pac, procId, patologia, d, criadoEm }
   const [tela, setTela] = useState({ tipo: "arquivo" });
-  const [abertos, setAbertos] = useState({ alzheimer: true, epilepsia: true });
+  const [abertos, setAbertos] = useState({ alzheimer: true, epilepsia: true, parkinson: true });
   const [menuNovo, setMenuNovo] = useState(false);
   const [menuMovel, setMenuMovel] = useState(false);
   const [salvoEm, setSalvoEm] = useState(null);
